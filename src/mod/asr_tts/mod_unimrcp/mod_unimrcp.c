@@ -1833,6 +1833,7 @@ static apt_bool_t speech_on_session_terminate(mrcp_application_t *application, m
 	if (schannel->channel_opened && globals.enable_profile_events) {
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_CLOSE);
 		if (event) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-ID", schannel->session_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", schannel->profile->name);
 			if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "TTS");
@@ -1897,6 +1898,7 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 
 	/* notify of channel open */
 	if (globals.enable_profile_events && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_OPEN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-ID", schannel->session_uuid);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", schannel->profile->name);
 		if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "TTS");
@@ -1916,6 +1918,12 @@ error:
 		speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(unknown) channel error!\n");
+	}
+
+	if ((schannel->type == SPEECH_CHANNEL_SYNTHESIZER) && (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "wellcloud_unimrcp_tts_open_failed") == SWITCH_STATUS_SUCCESS)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-ID", schannel->session_uuid);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", schannel->profile->name);
+		switch_event_fire(&event);
 	}
 
 	return TRUE;
@@ -1994,8 +2002,25 @@ static apt_bool_t synth_on_message_receive(mrcp_application_t *application, mrcp
 		/* received MRCP event */
 		if (message->start_line.method_id == SYNTHESIZER_SPEAK_COMPLETE) {
 			/* got SPEAK-COMPLETE */
+			switch_event_t *event = NULL;
+			mrcp_synth_header_t *synth_header = NULL;
+
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) SPEAK-COMPLETE\n", schannel->name);
 			speech_channel_set_state(schannel, SPEECH_CHANNEL_DONE);
+
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "wellcloud_unimrcp_tts_completion") == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-ID", schannel->session_uuid);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", schannel->profile->name);
+
+				synth_header = (mrcp_synth_header_t *)mrcp_resource_header_get(message);
+				if (synth_header) {
+					if (mrcp_resource_header_property_check(message, SYNTHESIZER_HEADER_COMPLETION_CAUSE) == TRUE) {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Completion-Cause-Code", "%d", synth_header->completion_cause);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Completion-Cause", apt_string_buffer_get(mrcp_synth_completion_cause_get(synth_header->completion_cause, message->start_line.version)));
+					}
+				}
+				switch_event_fire(&event);
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected event, method_id = %d\n", schannel->name,
 							  (int) message->start_line.method_id);
