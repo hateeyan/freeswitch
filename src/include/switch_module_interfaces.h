@@ -437,6 +437,8 @@ struct switch_asr_handle {
 	uint32_t flags;
 	/*! The Name */
 	char *name;
+	/*! The Call ID */
+	char *call_id;
 	/*! The Codec */
 	char *codec;
 	/*! The Rate */
@@ -490,6 +492,8 @@ struct switch_speech_handle {
 	uint32_t flags;
 	/*! The Name */
 	char *name;
+	/*! The Call ID */
+	char *call_id;
 	/*! The Rate */
 	uint32_t rate;
 	uint32_t speed;

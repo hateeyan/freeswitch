@@ -81,6 +81,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 
 	sh->rate = rate;
 	sh->name = switch_core_strdup(sh->memory_pool, module_name);
+	if (sh->call_id) {
+		sh->call_id = switch_core_strdup(sh->memory_pool, sh->call_id);
+	}
 	sh->samples = switch_samples_per_packet(rate, interval);
 	sh->samplerate = rate;
 	sh->native_rate = rate;

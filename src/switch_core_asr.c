@@ -82,6 +82,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 	}
 	ah->rate = rate;
 	ah->name = switch_core_strdup(ah->memory_pool, module_name);
+	if (ah->call_id) {
+		ah->call_id = switch_core_strdup(ah->memory_pool, ah->call_id);
+	}
 	ah->samplerate = rate;
 	ah->native_rate = rate;
 

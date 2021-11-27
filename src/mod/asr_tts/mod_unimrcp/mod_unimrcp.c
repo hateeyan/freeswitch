@@ -1622,6 +1622,10 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	}
 	name = switch_core_sprintf(sh->memory_pool, "TTS-%d", speech_channel_number);
 
+	if (sh->call_id) {
+		session_uuid = sh->call_id;
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_uuid), SWITCH_LOG_INFO,
 					  "speech_handle: name = %s, rate = %d, speed = %d, samples = %d, voice = %s, engine = %s, param = %s\n", sh->name, sh->rate,
 					  sh->speed, sh->samples, sh->voice, sh->engine, sh->param);
@@ -3149,6 +3153,10 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 		}
 	}
 	name = switch_core_sprintf(ah->memory_pool, "ASR-%d", speech_channel_number);
+
+	if (ah->call_id) {
+		session_uuid = ah->call_id;
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_uuid), SWITCH_LOG_INFO, "asr_handle: name = %s, codec = %s, rate = %d, grammar = %s, param = %s\n",
 					  ah->name, ah->codec, ah->rate, ah->grammar, ah->param);

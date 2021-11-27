@@ -3078,6 +3078,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 
 	if (need_create) {
 		memset(sh, 0, sizeof(*sh));
+		sh->call_id = switch_core_session_get_uuid(session);
 		if ((status = switch_core_speech_open(sh, tts_name, voice_name, (uint32_t) rate, interval, read_impl.number_of_channels, &flags, NULL)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid TTS module %s[%s]!\n", tts_name, voice_name);
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
@@ -3088,6 +3089,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	} else if (cache_obj && strcasecmp(cache_obj->voice_name, voice_name)) {
 		switch_copy_string(cache_obj->voice_name, voice_name, sizeof(cache_obj->voice_name));
 		switch_core_speech_text_param_tts(sh, "voice", voice_name);
+		if (sh->memory_pool) {
+			sh->call_id = switch_core_strdup(sh->memory_pool, switch_core_session_get_uuid(session));
+		}
 	}
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
