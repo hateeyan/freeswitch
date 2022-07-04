@@ -3459,6 +3459,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 		}
 	}
 
+	/*
 	if (type == SWITCH_MEDIA_TYPE_AUDIO) {
 		switch_media_flow_t audio_flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO);
 
@@ -3466,6 +3467,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
+	*/
 
 	if (type != SWITCH_MEDIA_TYPE_TEXT) {
 
