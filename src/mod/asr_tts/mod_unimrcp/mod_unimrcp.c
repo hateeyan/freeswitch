@@ -2858,8 +2858,6 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 {
 	/* loop through each param and add to recog header or vendor-specific-params */
 	switch_hash_index_t *hi = NULL;
-	const char *reset_params;
-
 	for (hi = switch_core_hash_first(schannel->params); hi; hi = switch_core_hash_next(&hi)) {
 		char *param_name = NULL, *param_val = NULL;
 		const void *key;
@@ -2877,8 +2875,6 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 			} else if (!strcasecmp(param_name, "name")) {
 				// This parameter is used internally only, not in MRCP headers
 			} else if (!strcasecmp(param_name, "start-recognize")) {
-				// This parameter is used internally only, not in MRCP headers
-			} else if (!strcasecmp(param_name, "wellcloud-reset-params")) {
 				// This parameter is used internally only, not in MRCP headers
 			} else {
 				/* this is probably a vendor-specific MRCP param */
@@ -2898,15 +2894,6 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 
 	if (gen_hdr->vendor_specific_params) {
 		mrcp_generic_header_property_add(msg, GENERIC_HEADER_VENDOR_SPECIFIC_PARAMS);
-	}
-
-	/* asr 使用长连接模式时, 每次调用时 schannel->params 都是增量更新, 下次无法删除、清空上次调用的参数
-	 * 设置该参数(wellcloud-reset-params)后会在本次调用后清空参数, 下次调用就会全量更新 */
-	reset_params = switch_core_hash_find(schannel->params, "wellcloud-reset-params");
-	if (schannel->params && reset_params && switch_true(reset_params)) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) reset params\n", schannel->name);
-		switch_core_hash_destroy(&schannel->params);
-		switch_core_hash_init(&schannel->params);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
